@@ -17,15 +17,17 @@ From my end I read and understood the working and functioning each of the packag
 By end of this project I won't claim I learnt everything about R language, however the self paced learning taught me the art of exploring, understanding and finding my way out when working on R.
 Although the entire code on Sentiment Analysis is available on many websites, I found most of them failed to give a thorough explanation of: 
 
-## "why a particular function is used?",
+*why a particular function is used?,*
 
-## "Role of a particular step in the end result", and
+*Role of a particular step in the end result, and*
 
-## "The various attributes available with a particular function".
+*The various attributes available with a particular function.*
 
-In this article I will try to explain the usage of each step of code w.r.t. to the above questions that comes to any first time R language learner.
+In this article we will try to understand the usage of each step of code w.r.t. to the above questions that comes to any first time R language learner.
 
-So, Let's begin
+Let's begin
+
+First step is to load these 4 packages to the global environment.
 
 ```{r, message=FALSE}
 library(tidytext)
@@ -34,16 +36,19 @@ library(stringr)
 library(dplyr)
 ```
 
-First step is to load these 4 packages to the global environment.
-`tidytext` is an important part of this project. The package and its associated functions lets us handle data comprising of texts. Remember that in tidytext package the table of tidy data is stored in a token format and is in a format of **one token per row**. Token usually means a one single word but it can also be a sentence, paragraph or even one complete chapter.
+`tidytext` is an important part of this project. The package and its associated functions lets us handle text data. Remember that in tidytext package the table of tidy data is stored in a token format and is in a format of **one token per row**. Token usually means a one single word but it can also be a sentence, paragraph or even one complete chapter.
 
-In our project, we aim to analyse each word in the book and rate those words on a sentiment scale. Hence, we would be tokenizing the tidydata to one word/one token in our case.
+In our project, we aim to analyse each word in the Jane Austen book and rate those words on a sentiment scale. Hence, we would be tokenizing the tidydata to one word/one token in our case.
 
 `janeaustenr` loads a package containing each word published in 6 books written by Jane Austen. We will be doing sentiment analysis of words in one of the above 6 books.
 
-`stringr` loads a package which lets us use the pipe operator`%>%` in next step and other string functions.
+`stringr` loads a package which lets us use the pipe operator`%>%` in next step and other string functions such as `str_detect`.
 
 `dplyr` is a package that lets us use the `group_by` function.
+
+## Tidying Text Data
+
+In next step, we will create a tibble in which the words in `austen_books()` are grouped by order of book, provided with a chapter number against each word depending upon the chapter it appears in, and are tokenized to one word level. In simple terms, we are *tidying* the text data to form `tidy_data` tibble.
 
 
 ```{r}
@@ -52,9 +57,9 @@ tidy_data<- austen_books()%>%group_by(book)%>% mutate(linenumber=row_number(),
             ignore_case = T))))%>%ungroup()%>%unnest_tokens(word,text)
 ```
 
-The above chunks of code is an important step in this project. We are aiming to create a tibble in which the words in janeausten package are grouped by order of book, provide chapter number against each word depending upon the chapter it appears in, and tokenize the janeausten package to one word level. In simple terms, we are *tidying* the text data in tidy_data tibble.
+The detailed explanation for the code is:
 
-Pipe Operator(%>%) - The pipe operator takes the output of one statement and makes it the input of next statement. This is somewhat similar to chaining. e.g. f(g(h(x))) can be piped as `x%>%h()%>%g()%>%f()`. Pipe operator hence allows the chaining, without needing intermediate variables to store the value. Also, it eliminates the use of lots of parenthesis making it *readable* in a code chunk and presents the chained code in a *logically sequenced* format.
+Pipe Operator(`%>%`) - The pipe operator takes the output of one statement and makes it the input of next statement. This is somewhat similar to chaining. e.g. f(g(h(x))) can be piped as `x%>%h()%>%g()%>%f()`. Pipe operator hence allows the chaining, without needing intermediate variables to store the value. Also, it eliminates the use of lots of parenthesis making it *readable* in a code chunk and presents the chained code in a *logically sequenced* format.
 
 `group_by()`- The function groups the austen_books() data frame by order of the  books present in data. This is not a visual change i.e. group_by function won't make a readable change to the structure of data.However it changes how th data acts with other dplyr verbs (functions).
 
@@ -69,7 +74,7 @@ airquality
 head(airquality)
 ```
 
-With mutate function we can add a new variable `temperature:wind` to the data frame. Infact we can add any new variable to an existing dataframe using this function.
+With mutate function we can add a new variable *temperature/wind* to the data frame. Infact we can add any new variable to an existing dataframe using this function.
 
 ```{r, eval=FALSE}
 mutate(airquality, "temp/wind" = Temp/Wind)
@@ -103,12 +108,68 @@ Once we identify a Chapter number in the dataframe we need to add any subsequent
 
 `cumsum()`- We have identified the Chapter number we need to make a cumulative sum of the words that appear in one chapter. For this the `cumsum()` function is used.
 By the end of this chunk of code we ungroup and unnest the tokens to bring the dataframe to its original format.
-The new dataframe `tidy_data` is now in a tidy format with each row having one word, the corresponding line number, and the corresponding chapter it appears in. We are now ready to use sentiment tools on our tidy data.
+The new dataframe `tidy_data` is now in a tidy format with each row having one word, the corresponding line number, and the corresponding chapter it appears in.
 
-This is how our new dataset looks like:
+This is how our new dataset looks like after *tidying*:
 ```{r}
 tidy_data
 ```
+
+We are now ready to use sentiment analysis tools on our tidy data.
+
+## Sentiment Lexicons
+
+To start with Sentiment analysis, we should understand the usage and meaning of different sentiment lexicons.
+
+Sentiment Lexicons are different ways to measure text sentiments. There are 3 Sentiment Lexicons:
+`AFINN`
+`bing`, and
+`loughran`
+
+All the 3 models are based on unigrams. Unigrams are sequence of 1 word only. If you recall, we had tokenized the words from JaneAusten's book to one word level. It was for this reason. The AFINN lexicon measures each word sentiment on a scale of -5 to +5. -5 being the most negative sentiment and +5 being the most positive.
+
+The bing lexicon model uses a binary type format of negative and positive. So a word is rated either negative or positive. Negative words depict negative sentiment and positive words depict positive sentiment.
+
+Loughran lexicon is created for use with financial documents. This lexicon labels words with six possible sentiments important in financial contexts: "negative", "positive", "litigious", "uncertainty", "constraining", or "superfluous".
+
+In our project, we are using bing lexicon model. This is how the `bing` lexicon model looks like.
+```{r}
+get_sentiments("bing")
+```
+
+# Finding Positive Words in the Book "Sense & Sensibility"
+
+In this step, our aim is to filter out all the positive words that appear in the book Sense and Sensibility. This is an easy task, given that we have already prepared a tidy_data format.
+
+To proceed with, first we filter out all the positive words from the bing lexicon and assign the filtered positive words to a dataframe `positive_senti`.
+```{r}
+positive_senti<- get_sentiments("bing")%>%filter(sentiment=="positive")
+```
+So we now have a tibble of all positive words from bing lexicon.
+Let's see how this looks like. Compare this with the bing lexicon we earlier called upon by the code `get_sentiments("bing")`.
+```{r, echo=FALSE}
+positive_senti
+```
+
+Next we will use `positive_senti` to filter out the positive words from the book Sense & Sensibility. For this we will be using the `tidy_data` tibble which we earlier created.
+
+```{r}
+positivetidy_data<- tidy_data%>% filter(book=="Sense & Sensibility")%>% 
+  semi_join(positive_senti, by = "word")%>%count(word,sort = T)
+```
+
+In the above chunk of codes, we first filter the rows from tidy_data tibble which have Sense & Sensibility in the book variable. Next, we use semi_join function to find those rows of Sense & Sensibility which have their words match with the positive words of bing lexicon(positive_senti)
+
+semi_join - semi_join returns rows of first table where it can find a match in the second table. In our case, we are using the table of tidy_data (filtered with the book Sense & Sensibility) and finding a match of all the words in this filtered tidy_data that appears in the positive_senti table.
+
+count - this function counts the number of times each positive words from Sense & Sensibility appears in the bing lexicon. The sort=TRUE attribute sorts the result showing the largest number at the top.
+
+So after this operation, we can now see the number of times positive words appear in the book Sense & Sensibility. Mind it, that there may be words that are not in the bing lexicon. Those words are not rated by the bing lexicon and won't appear in our result.
+```{r echo=FALSE}
+positivetidy_data
+```
+
+Interestingly, we can now find that the positive word "well" appears for 240 times in the book Sense & Sensibiltiy.
 
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
